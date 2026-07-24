@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>학급 투표</title>
+<style>
+  :root {
+    --purple: #7c3aed;
+    --pink: #ec4899;
+    --orange: #f97316;
+    --yellow: #facc15;
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --bg: #fef9ff;
+    --text: #1f2937;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: linear-gradient(160deg, #fdf4ff 0%, #eef2ff 100%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 600px;
+    min-height: 100vh;
+    background: #fff;
+    box-shadow: 0 0 40px rgba(124, 58, 237, 0.08);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px 40px;
+  }
+
+  /* 화면 공통 */
+  .screen { display: none; flex: 1; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .back-btn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    color: var(--purple);
+  }
+  .back-btn:hover { background: #f3e8ff; }
+
+  h1.title {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  /* 시작 화면 */
+  #screen-start {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .logo {
+    font-size: 48px;
+    margin-bottom: 8px;
+  }
+
+  .app-name {
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(90deg, var(--purple), var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 32px;
+  }
+
+  .start-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .big-btn {
+    padding: 22px;
+    font-size: 20px;
+    font-weight: 800;
+    border: none;
+    border-radius: 20px;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    box-shadow: 0 8px 0 rgba(0,0,0,0.12);
+  }
+  .big-btn:active {
+    transform: translateY(6px);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.12);
+  }
+
+  .btn-teacher { background: linear-gradient(135deg, var(--purple), var(--pink)); }
+  .btn-student { background: linear-gradient(135deg, var(--orange), var(--yellow)); }
+
+  /* 공통 버튼 */
+  .btn {
+    padding: 16px;
+    font-size: 17px;
+    font-weight: 700;
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    transition: transform 0.1s ease;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: #f3e8ff;
+    color: var(--purple);
+  }
+
+  /* 입력창 */
+  .input-field {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;
+    border: 2px solid #e9d5ff;
+    border-radius: 12px;
+    outline: none;
+    margin-bottom: 12px;
+  }
+  .input-field:focus { border-color: var(--purple); }
+
+  /* 교사 비밀번호 화면 */
+  #screen-password {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+  }
+  #screen-password .lock-icon { font-size: 40px; margin-bottom: 8px; }
+  #screen-password .input-field { text-align: center; letter-spacing: 4px; }
+  .error-msg {
+    color: #ef4444;
+    font-size: 14px;
+    font-weight: 700;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  /* 설정 필요 배너 */
+  .config-banner {
+    display: none;
+    background: #fff7ed;
+    border: 2px solid var(--orange);
+    color: #9a3412;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .config-banner.show { display: block; }
+
+  /* 교사 화면 */
+  .section-card {
+    background: #faf5ff;
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 18px;
+  }
+  .section-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--purple);
+    margin: 0 0 12px;
+  }
+
+  .option-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .option-row .input-field { margin-bottom: 0; }
+  .remove-option-btn {
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    border-radius: 10px;
+    width: 44px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .add-option-btn {
+    width: 100%;
+    padding: 10px;
+    background: #ede9fe;
+    color: var(--purple);
+    border: 2px dashed #c4b5fd;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 14px;
+  }
+
+  /* 학생 대기 화면 */
+  .waiting-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 10px;
+    color: #9ca3af;
+  }
+  .waiting-box .icon { font-size: 44px; }
+
+  /* 투표 선택지 버튼 */
+  .vote-option-btn {
+    width: 100%;
+    padding: 18px;
+    margin-bottom: 12px;
+    font-size: 17px;
+    font-weight: 700;
+    text-align: left;
+    border: 2px solid #e9d5ff;
+    border-radius: 14px;
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .vote-option-btn:active { transform: scale(0.98); background: #f3e8ff; }
+
+  /* 결과 화면 (막대그래프) */
+  .result-question {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .result-bar-row { margin-bottom: 16px; }
+  .result-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .result-bar-track {
+    width: 100%;
+    height: 22px;
+    background: #f3e8ff;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .result-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--purple), var(--pink));
+    transition: width 0.3s ease;
+  }
+
+  .vote-done-badge {
+    text-align: center;
+    background: #dcfce7;
+    color: #15803d;
+    font-weight: 800;
+    padding: 10px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+
+  .conn-error {
+    display: none;
+    background: #fef2f2;
+    border: 2px solid #fca5a5;
+    color: #b91c1c;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 16px;
+  }
+  .conn-error.show { display: block; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- 1. 시작 화면 -->
+  <section id="screen-start" class="screen active">
+    <div class="logo">🗳️</div>
+    <div class="app-name">우리반 투표</div>
+    <div class="start-buttons">
+      <button class="big-btn btn-teacher" id="btn-go-teacher">👩‍🏫 교사</button>
+      <button class="big-btn btn-student" id="btn-go-student">🙋 학생</button>
+    </div>
+  </section>
+
+  <!-- 2. 교사 비밀번호 화면 -->
+  <section id="screen-password" class="screen">
+    <button class="back-btn" data-back="screen-start" style="align-self:flex-start;">←</button>
+    <div class="lock-icon">🔒</div>
+    <h1 class="title">교사 인증</h1>
+    <input type="password" class="input-field" id="input-password" placeholder="비밀번호 입력">
+    <div class="error-msg" id="password-error">비밀번호가 틀렸어요. 다시 입력해주세요.</div>
+    <button class="btn" id="btn-check-password" style="width:100%;margin-top:8px;">확인</button>
+  </section>
+
+  <!-- 3. 교사 화면 -->
+  <section id="screen-teacher" class="screen">
+    <div class="top-bar">
+      <button class="back-btn" data-back="screen-start">←</button>
+      <h1 class="title">교사 화면</h1>
+    </div>
+
+    <div class="config-banner" id="banner-config-teacher">⚠️ Supabase 설정이 필요해요</div>
+
+    <div class="section-card" id="teacher-register-block">
+      <p class="section-title">📝 질문 등록</p>
+      <input type="text" class="input-field" id="input-question" placeholder="질문을 입력하세요">
+      <div id="option-list">
+        <div class="option-row">
+          <input type="text" class="input-field" placeholder="선택지 1">
+        </div>
+        <div class="option-row">
+          <input type="text" class="input-field" placeholder="선택지 2">
+        </div>
+      </div>
+      <button class="add-option-btn" id="btn-add-option">+ 선택지 추가</button>
+      <button class="btn" id="btn-start-vote" style="width:100%;">투표 시작</button>
+    </div>
+
+    <div class="section-card" id="teacher-active-block" style="display:none;">
+      <p class="section-title">🟢 진행 중인 질문</p>
+      <p id="teacher-active-question-text" style="font-weight:700; margin: 0 0 14px;"></p>
+      <button class="btn btn-secondary" id="btn-end-vote" style="width:100%;">마감하고 새 질문 등록</button>
+    </div>
+
+    <div class="section-card">
+      <p class="section-title">📊 실시간 집계</p>
+      <div id="teacher-result-area">
+        <p style="color:#9ca3af; text-align:center; font-size:14px;">진행 중인 질문이 없어요</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. 학생 화면 -->
+  <section id="screen-student" class="screen">
+    <div class="top-bar">
+      <button class="back-btn" data-back="screen-start">←</button>
+      <h1 class="title">투표하기</h1>
+    </div>
+
+    <div class="config-banner" id="banner-config-student">⚠️ Supabase 설정이 필요해요</div>
+
+    <div id="student-vote-area">
+      <div class="waiting-box">
+        <div class="icon">⏳</div>
+        <p>진행 중인 투표가 없어요</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 결과 화면 -->
+  <section id="screen-result" class="screen">
+    <div class="top-bar">
+      <button class="back-btn" id="btn-result-back">←</button>
+      <h1 class="title">투표 결과</h1>
+    </div>
+
+    <div class="vote-done-badge" id="vote-done-badge" style="display:none;">✅ 투표가 완료되었어요!</div>
+
+    <p class="result-question" id="result-question-text">질문 내용이 여기에 표시됩니다</p>
+
+    <div id="result-bars">
+      <!-- 결과 막대 리스트가 여기 렌더링됨 -->
+    </div>
+
+    <div class="conn-error" id="conn-error-banner">📡 연결이 원활하지 않아요, 잠시 후 다시 시도해주세요</div>
+  </section>
+
+</div>
+
+<!-- Supabase 클라이언트 라이브러리 (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Supabase 접속 정보 (config.js 없으면 아래 main script가 안내 배너를 띄움) -->
+<script src="config.js"></script>
+
+<script>
+// ===== 상수 =====
+// 교사 1명용 고정 비밀번호 (개인정보 아님, 마일스톤 3단계에서 config.js로 옮길 예정)
+const TEACHER_PASSWORD = '1234';
+
+const LS_KEY_DEVICE_ID = 'voteApp_deviceId';
+
+// config.js가 없거나 값이 비어있으면 비설정 상태로 간주
+const supabaseConfigured = typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined'
+  && !!SUPABASE_URL && !!SUPABASE_ANON_KEY;
+
+const supabaseClient = supabaseConfigured
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+// 결과 화면에 현재 표시 중인 질문 (실시간 갱신용)
+let 결과화면질문 = null;
+// 교사 화면에 현재 표시 중인 질문 (마감 버튼에서 사용)
+let 교사화면질문 = null;
+
+// ===== 화면 전환 =====
+function 화면전환(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function Supabase설정안내() {
+  alert('Supabase 설정이 필요해요. config.js를 확인해주세요.');
+}
+
+// ===== localStorage 헬퍼 (device_id만 로컬 보관) =====
+function 기기ID가져오기() {
+  let id = localStorage.getItem(LS_KEY_DEVICE_ID);
+  if (!id) {
+    id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem(LS_KEY_DEVICE_ID, id);
+  }
+  return id;
+}
+
+// ===== Supabase 헬퍼 =====
+// current_question 테이블: id, question_id, question_text, options(jsonb), active, created_at
+// vote_records 테이블: id, question_id, question_text, option_text, device_id, created_at
+async function 현재질문가져오기() {
+  const { data, error } = await supabaseClient
+    .from('current_question')
+    .select('question_id, question_text, options')
+    .eq('active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  return { id: data.question_id, text: data.question_text, options: data.options };
+}
+
+async function 현재질문저장(question) {
+  const { error } = await supabaseClient
+    .from('current_question')
+    .insert({
+      question_id: question.id,
+      question_text: question.text,
+      options: question.options,
+      active: true
+    });
+  if (error) throw error;
+}
+
+async function 질문마감(questionId) {
+  const { error } = await supabaseClient
+    .from('current_question')
+    .update({ active: false })
+    .eq('question_id', questionId)
+    .eq('active', true);
+  if (error) throw error;
+}
+
+async function 질문기록가져오기(questionId) {
+  const { data, error } = await supabaseClient
+    .from('vote_records')
+    .select('question_id, option_text, device_id')
+    .eq('question_id', questionId);
+  if (error) throw error;
+  return (data || []).map(row => ({
+    questionId: row.question_id,
+    optionText: row.option_text,
+    deviceId: row.device_id
+  }));
+}
+
+async function 기록추가(record) {
+  const { error } = await supabaseClient
+    .from('vote_records')
+    .insert({
+      question_id: record.questionId,
+      question_text: record.questionText,
+      option_text: record.optionText,
+      device_id: record.deviceId
+    });
+  if (error) throw error;
+}
+
+async function 이미투표했는지(questionId, deviceId) {
+  const { data, error } = await supabaseClient
+    .from('vote_records')
+    .select('id')
+    .eq('question_id', questionId)
+    .eq('device_id', deviceId)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return !!data;
+}
+
+function 질문ID생성() {
+  return 'q_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+}
+
+// ===== 결과 막대그래프 공통 컴포넌트 =====
+function 결과막대렌더링(container, question, records) {
+  const 관련기록 = records.filter(r => r.questionId === question.id);
+  const 전체표수 = 관련기록.length;
+
+  container.innerHTML = '';
+  question.options.forEach(option => {
+    const 표수 = 관련기록.filter(r => r.optionText === option).length;
+    const 비율 = 전체표수 > 0 ? Math.round((표수 / 전체표수) * 100) : 0;
+
+    const row = document.createElement('div');
+    row.className = 'result-bar-row';
+    row.innerHTML = `
+      <div class="result-bar-label"><span>${option}</span><span>${표수}표 (${비율}%)</span></div>
+      <div class="result-bar-track"><div class="result-bar-fill" style="width:${비율}%;"></div></div>
+    `;
+    container.appendChild(row);
+  });
+
+  if (전체표수 === 0) {
+    const empty = document.createElement('p');
+    empty.style.cssText = 'color:#9ca3af; text-align:center; font-size:13px; margin-top:8px;';
+    empty.textContent = '아직 투표가 없어요';
+    container.appendChild(empty);
+  }
+}
+
+// ===== 연결 오류 배너 =====
+function 연결오류표시(show) {
+  document.getElementById('conn-error-banner').classList.toggle('show', show);
+}
+
+// ===== 교사 화면 렌더링 =====
+async function 교사화면렌더링() {
+  const registerBlock = document.getElementById('teacher-register-block');
+  const activeBlock = document.getElementById('teacher-active-block');
+  const resultArea = document.getElementById('teacher-result-area');
+
+  if (!supabaseConfigured) {
+    resultArea.innerHTML = '<p style="color:#9ca3af; text-align:center; font-size:14px;">진행 중인 질문이 없어요</p>';
+    return;
+  }
+
+  try {
+    const q = await 현재질문가져오기();
+    교사화면질문 = q;
+
+    if (q) {
+      registerBlock.style.display = 'none';
+      activeBlock.style.display = 'block';
+      document.getElementById('teacher-active-question-text').textContent = q.text;
+      const records = await 질문기록가져오기(q.id);
+      결과막대렌더링(resultArea, q, records);
+    } else {
+      registerBlock.style.display = 'block';
+      activeBlock.style.display = 'none';
+      resultArea.innerHTML = '<p style="color:#9ca3af; text-align:center; font-size:14px;">진행 중인 질문이 없어요</p>';
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// ===== 학생 화면 렌더링 =====
+async function 학생투표영역렌더링() {
+  const area = document.getElementById('student-vote-area');
+
+  if (!supabaseConfigured) {
+    area.innerHTML = `
+      <div class="waiting-box">
+        <div class="icon">⏳</div>
+        <p>진행 중인 투표가 없어요</p>
+      </div>
+    `;
+    return;
+  }
+
+  let q;
+  try {
+    q = await 현재질문가져오기();
+  } catch (e) {
+    console.error(e);
+    연결오류표시(true);
+    return;
+  }
+
+  if (!q) {
+    area.innerHTML = `
+      <div class="waiting-box">
+        <div class="icon">⏳</div>
+        <p>진행 중인 투표가 없어요</p>
+      </div>
+    `;
+    return;
+  }
+
+  area.innerHTML = '';
+  q.options.forEach(option => {
+    const btn = document.createElement('button');
+    btn.className = 'vote-option-btn';
+    btn.textContent = option;
+    btn.addEventListener('click', () => 투표하기(q, option));
+    area.appendChild(btn);
+  });
+}
+
+async function 투표하기(question, optionText) {
+  const deviceId = 기기ID가져오기();
+  try {
+    if (await 이미투표했는지(question.id, deviceId)) {
+      await 결과화면열기(question, true);
+      return;
+    }
+    await 기록추가({
+      questionId: question.id,
+      questionText: question.text,
+      optionText: optionText,
+      deviceId: deviceId
+    });
+    교사화면렌더링();
+    await 결과화면열기(question, true);
+  } catch (e) {
+    console.error(e);
+    연결오류표시(true);
+  }
+}
+
+// ===== 결과 화면 =====
+async function 결과화면열기(question, 투표완료여부) {
+  결과화면질문 = question;
+  document.getElementById('result-question-text').textContent = question.text;
+  document.getElementById('vote-done-badge').style.display = 투표완료여부 ? 'block' : 'none';
+  화면전환('screen-result');
+
+  try {
+    const records = await 질문기록가져오기(question.id);
+    연결오류표시(false);
+    결과막대렌더링(document.getElementById('result-bars'), question, records);
+  } catch (e) {
+    console.error(e);
+    연결오류표시(true);
+  }
+}
+
+// ===== 학생 진입 처리 (대기 / 투표 / 이미 투표한 경우 결과 자동 전환) =====
+async function 학생화면진입() {
+  if (!supabaseConfigured) {
+    await 학생투표영역렌더링();
+    화면전환('screen-student');
+    return;
+  }
+
+  try {
+    const q = await 현재질문가져오기();
+    const deviceId = 기기ID가져오기();
+
+    if (q && await 이미투표했는지(q.id, deviceId)) {
+      await 결과화면열기(q, true);
+      return;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+
+  await 학생투표영역렌더링();
+  화면전환('screen-student');
+}
+
+// ===== 실시간 갱신 (Supabase realtime 구독 + 폴링 백업) =====
+async function 화면들다시그리기() {
+  const activeScreen = document.querySelector('.screen.active').id;
+
+  await 교사화면렌더링();
+
+  if (activeScreen === 'screen-student') {
+    await 학생투표영역렌더링();
+  }
+
+  if (activeScreen === 'screen-result' && 결과화면질문) {
+    try {
+      const records = await 질문기록가져오기(결과화면질문.id);
+      결과막대렌더링(document.getElementById('result-bars'), 결과화면질문, records);
+      연결오류표시(false);
+    } catch (e) {
+      console.error(e);
+      연결오류표시(true);
+    }
+  }
+}
+
+if (supabaseConfigured) {
+  supabaseClient
+    .channel('vote-app-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'current_question' }, () => 화면들다시그리기())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'vote_records' }, () => 화면들다시그리기())
+    .subscribe();
+
+  setInterval(화면들다시그리기, 4000);
+}
+
+// ===== 이벤트 바인딩 =====
+document.getElementById('btn-go-teacher').addEventListener('click', () => 화면전환('screen-password'));
+document.getElementById('btn-go-student').addEventListener('click', 학생화면진입);
+
+document.querySelectorAll('[data-back]').forEach(btn => {
+  btn.addEventListener('click', () => 화면전환(btn.dataset.back));
+});
+
+document.getElementById('btn-result-back').addEventListener('click', () => 화면전환('screen-start'));
+
+document.getElementById('btn-check-password').addEventListener('click', () => {
+  const input = document.getElementById('input-password');
+  const errorMsg = document.getElementById('password-error');
+  if (input.value === TEACHER_PASSWORD) {
+    errorMsg.classList.remove('show');
+    input.value = '';
+    교사화면렌더링();
+    화면전환('screen-teacher');
+  } else {
+    errorMsg.classList.add('show');
+    input.value = '';
+  }
+});
+
+document.getElementById('btn-add-option').addEventListener('click', () => {
+  const list = document.getElementById('option-list');
+  const row = document.createElement('div');
+  row.className = 'option-row';
+  const count = list.children.length + 1;
+  row.innerHTML = `
+    <input type="text" class="input-field" placeholder="선택지 ${count}">
+    <button class="remove-option-btn">✕</button>
+  `;
+  row.querySelector('.remove-option-btn').addEventListener('click', () => {
+    if (list.children.length > 2) row.remove();
+  });
+  list.appendChild(row);
+});
+
+document.getElementById('btn-start-vote').addEventListener('click', async () => {
+  if (!supabaseConfigured) {
+    Supabase설정안내();
+    return;
+  }
+
+  const questionText = document.getElementById('input-question').value.trim();
+  const optionInputs = Array.from(document.querySelectorAll('#option-list .input-field'));
+  const options = optionInputs.map(i => i.value.trim()).filter(v => v !== '');
+
+  if (!questionText) {
+    alert('질문을 입력해주세요');
+    return;
+  }
+  if (options.length < 2) {
+    alert('선택지를 2개 이상 입력해주세요');
+    return;
+  }
+
+  const question = { id: 질문ID생성(), text: questionText, options: options };
+
+  try {
+    await 현재질문저장(question);
+  } catch (e) {
+    console.error(e);
+    alert('저장 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+
+  document.getElementById('input-question').value = '';
+  optionInputs.forEach(i => i.value = '');
+
+  교사화면렌더링();
+});
+
+document.getElementById('btn-end-vote').addEventListener('click', async () => {
+  if (!교사화면질문) return;
+  try {
+    await 질문마감(교사화면질문.id);
+  } catch (e) {
+    console.error(e);
+    alert('마감 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+  교사화면렌더링();
+});
+
+// ===== 초기화 =====
+기기ID가져오기();
+if (!supabaseConfigured) {
+  document.getElementById('banner-config-teacher').classList.add('show');
+  document.getElementById('banner-config-student').classList.add('show');
+}
+교사화면렌더링();
+</script>
+
+</body>
+</html>
